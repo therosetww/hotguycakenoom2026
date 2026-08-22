@@ -199,6 +199,8 @@
   .col-toggle-row label{display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--cream); cursor:pointer; white-space:nowrap;}
   .col-toggle-row input[type="checkbox"]{width:14px; height:14px; accent-color:var(--gold); cursor:pointer;}
 
+  #orders-table.hide-phone .col-phone,
+  #orders-table.hide-address .col-address,
   #orders-table.hide-line .col-line,
   #orders-table.hide-orderdate .col-orderdate,
   #orders-table.hide-pickupdate .col-pickupdate,
@@ -494,6 +496,8 @@
       </div>
       <div class="col-toggle-row" id="col-toggle-row">
         <span class="col-toggle-label">顯示欄位：</span>
+        <label><input type="checkbox" class="col-toggle" data-col="phone" checked>電話</label>
+        <label><input type="checkbox" class="col-toggle" data-col="address" checked>地址</label>
         <label><input type="checkbox" class="col-toggle" data-col="line" checked>社群帳號</label>
         <label><input type="checkbox" class="col-toggle" data-col="orderdate" checked>訂購日期</label>
         <label><input type="checkbox" class="col-toggle" data-col="pickupdate" checked>取貨日期</label>
@@ -507,8 +511,8 @@
         <table id="orders-table" style="min-width:1240px;">
           <thead><tr>
             <th>姓名</th>
-            <th>電話</th>
-            <th>地址</th>
+            <th class="col-phone">電話</th>
+            <th class="col-address">地址</th>
             <th class="col-line">社群帳號</th>
             <th class="col-orderdate">訂購日期</th>
             <th class="col-pickupdate">取貨日期</th>
@@ -638,7 +642,7 @@ async function loadAll(){
 }
 
 /* ---------------- COLUMN VISIBILITY ---------------- */
-const HIDEABLE_COLS = ['line','orderdate','pickupdate','method','qty','due','note','actions'];
+const HIDEABLE_COLS = ['phone','address','line','orderdate','pickupdate','method','qty','due','note','actions'];
 let colVisibility = {};
 
 function colVisKey(){
@@ -1053,8 +1057,8 @@ function renderCustomers(){
       : `<br><span style="color:var(--ok);font-size:11px;">免運</span>`;
     const dueLabel = fmt(c.due) + shipNote;
     tr.innerHTML = `<td style="white-space:nowrap;">${escapeHtml(c.name)} ${c.identity==='親友'?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(201,162,39,0.18);color:var(--gold-light);">親友價</span>':''}${c.identity==='公關'?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(160,120,200,0.2);color:#c7a3e0;">公關贈送</span>':''}</td>
-      <td class="mono" style="white-space:nowrap;">${escapeHtml(c.phone||'-')}</td>
-      <td>${escapeHtml(c.address||'-')}</td>
+      <td class="mono col-phone" style="white-space:nowrap;">${escapeHtml(c.phone||'-')}</td>
+      <td class="col-address">${escapeHtml(c.address||'-')}</td>
       <td class="col-line" style="white-space:nowrap;">${escapeHtml(c.line||'-')}</td>
       <td class="mono col-orderdate">${c.orderDate||'-'}</td>
       <td class="col-pickupdate"><input type="date" class="date-edit" data-field="pickupDate" value="${c.pickupDate||''}"></td>
