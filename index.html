@@ -381,6 +381,19 @@
   <!-- CUSTOMERS -->
   <section id="view-customers" class="view">
     <div class="card">
+      <h2><span class="dot"></span>檔期目標進度</h2>
+      <div class="settings-row">
+        <div class="field"><label>總目標盒數</label><input id="target-boxes-input" type="number" min="0" step="1" placeholder="300"></div>
+        <button class="btn secondary" id="btn-save-target">儲存目標</button>
+      </div>
+      <div class="stat-grid" style="margin-top:14px; margin-bottom:0;">
+        <div class="stat"><div class="label">總目標盒數</div><div class="num mono" id="target-boxes-display">0</div></div>
+        <div class="stat revenue"><div class="label">現訂購盒數</div><div class="num" id="current-ordered-boxes">0</div></div>
+        <div class="stat profit"><div class="label">差距總目標盒數</div><div class="num" id="target-gap">0</div></div>
+      </div>
+      <div class="note" id="target-remainder-note"></div>
+    </div>
+    <div class="card">
       <h2><span class="dot"></span>交貨與收款總覽</h2>
       <div class="stat-grid" style="margin-bottom:0;">
         <div class="stat"><div class="label">已交貨金額</div><div class="num mono" id="order-summary-delivered">NT$0</div></div>
@@ -582,7 +595,7 @@
 const fmt = n => 'NT$' + Math.round(Number(n)||0).toLocaleString('zh-Hant-TW');
 const todayStr = () => new Date().toISOString().slice(0,10);
 
-let state = { settings:{single:0, boxNormal:0, boxFriend:0, shipping:0, storeShipCost:60, freeShipThreshold:0, bonusThreshold:0, costPerBox:0, wasteRate:5, piecesPerBox:6}, costs:[], customers:[], payments:[], ingredients:[], recipe:[] };
+let state = { settings:{single:0, boxNormal:0, boxFriend:0, shipping:0, storeShipCost:60, freeShipThreshold:0, bonusThreshold:0, costPerBox:0, wasteRate:5, piecesPerBox:6, targetBoxes:300}, costs:[], customers:[], payments:[], ingredients:[], recipe:[] };
 
 async function safeGet(key){
   try{
@@ -603,12 +616,13 @@ async function loadAll(){
     safeGet('hgc-settings'), safeGet('hgc-costs'), safeGet('hgc-customers'), safeGet('hgc-payments'),
     safeGet('hgc-ingredients'), safeGet('hgc-recipe')
   ]);
-  state.settings = Object.assign({single:0, boxNormal:0, boxFriend:0, shipping:0, storeShipCost:60, freeShipThreshold:0, bonusThreshold:0, costPerBox:0, wasteRate:5, piecesPerBox:6}, settings || {});
+  state.settings = Object.assign({single:0, boxNormal:0, boxFriend:0, shipping:0, storeShipCost:60, freeShipThreshold:0, bonusThreshold:0, costPerBox:0, wasteRate:5, piecesPerBox:6, targetBoxes:300}, settings || {});
   state.costs = costs || [];
   state.customers = customers || [];
   state.payments = payments || [];
   state.ingredients = ingredients || [];
   state.recipe = recipe || [];
+  document.getElementById('target-boxes-input').value = state.settings.targetBoxes ?? 300;
   document.getElementById('price-single').value = state.settings.single || '';
   document.getElementById('price-box-normal').value = state.settings.boxNormal || '';
   document.getElementById('price-box-friend').value = state.settings.boxFriend || '';
@@ -1483,6 +1497,40 @@ function renderOrderSummary(){
   outEl.parentElement.classList.toggle('neg', outstanding<0);
 }
 
+function renderTargetProgress(){
+  const piecesPerBox = state.settings.piecesPerBox || 6;
+  let totalQtyBox = 0;
+  let totalQtySingle = 0;
+  state.customers.forEach(c=>{
+    totalQtyBox += (c.qtyBox||0) + (c.bonusBoxes||0);
+    totalQtySingle += (c.qtySingle||0);
+  });
+  const convertedBoxes = Math.floor(totalQtySingle / piecesPerBox);
+  const remainderPieces = totalQtySingle % piecesPerBox;
+  const currentOrderedBoxes = totalQtyBox + convertedBoxes;
+  const target = state.settings.targetBoxes || 0;
+  const gap = target - currentOrderedBoxes;
+
+  document.getElementById('target-boxes-display').textContent = target.toLocaleString('zh-Hant-TW');
+  document.getElementById('current-ordered-boxes').textContent = currentOrderedBoxes.toLocaleString('zh-Hant-TW');
+  const gapEl = document.getElementById('target-gap');
+  gapEl.textContent = gap.toLocaleString('zh-Hant-TW');
+  gapEl.parentElement.classList.toggle('neg', gap<0);
+
+  const noteEl = document.getElementById('target-remainder-note');
+  if(remainderPieces>0){
+    noteEl.textContent = `現訂購盒數已包含單顆訂單自動換算（每${piecesPerBox}顆算1盒），目前還有 ${remainderPieces} 顆單顆訂單未滿一盒，尚未計入盒數。`;
+  } else {
+    noteEl.textContent = `現訂購盒數已包含單顆訂單自動換算（每${piecesPerBox}顆算1盒），也包含買十送一與公關贈送的盒數。差距為負表示已超過目標盒數。`;
+  }
+}
+
+document.getElementById('btn-save-target').addEventListener('click', async ()=>{
+  state.settings.targetBoxes = parseFloat(document.getElementById('target-boxes-input').value)||0;
+  await safeSet('hgc-settings', state.settings);
+  renderTargetProgress();
+});
+
 function renderAll(){
   renderIngredients();
   renderRecipe();
@@ -1492,6 +1540,7 @@ function renderAll(){
   renderPayments();
   renderReconciliation();
   renderOrderSummary();
+  renderTargetProgress();
   renderDashboard();
 }
 
