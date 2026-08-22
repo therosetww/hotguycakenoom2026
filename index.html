@@ -193,6 +193,20 @@
   .note-edit:hover{border-color:var(--panel-line);}
   .note-edit:focus{outline:none; border-color:var(--gold); background:var(--bg-deep-2);}
   .note-edit::placeholder{color:var(--muted); opacity:0.6;}
+
+  .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin-bottom:14px; padding:10px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
+  .col-toggle-label{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.02em;}
+  .col-toggle-row label{display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--cream); cursor:pointer; white-space:nowrap;}
+  .col-toggle-row input[type="checkbox"]{width:14px; height:14px; accent-color:var(--gold); cursor:pointer;}
+
+  #orders-table.hide-line .col-line,
+  #orders-table.hide-orderdate .col-orderdate,
+  #orders-table.hide-pickupdate .col-pickupdate,
+  #orders-table.hide-method .col-method,
+  #orders-table.hide-qty .col-qty,
+  #orders-table.hide-due .col-due,
+  #orders-table.hide-note .col-note,
+  #orders-table.hide-actions .col-actions{display:none;}
 </style>
 </head>
 <body>
@@ -465,9 +479,34 @@
           </select>
         </div>
       </div>
+      <div class="col-toggle-row" id="col-toggle-row">
+        <span class="col-toggle-label">顯示欄位：</span>
+        <label><input type="checkbox" class="col-toggle" data-col="line" checked>社群帳號</label>
+        <label><input type="checkbox" class="col-toggle" data-col="orderdate" checked>訂購日期</label>
+        <label><input type="checkbox" class="col-toggle" data-col="pickupdate" checked>取貨日期</label>
+        <label><input type="checkbox" class="col-toggle" data-col="method" checked>取貨方式</label>
+        <label><input type="checkbox" class="col-toggle" data-col="qty" checked>數量</label>
+        <label><input type="checkbox" class="col-toggle" data-col="due" checked>應收</label>
+        <label><input type="checkbox" class="col-toggle" data-col="note" checked>備註</label>
+        <label><input type="checkbox" class="col-toggle" data-col="actions" checked>複製/刪除</label>
+      </div>
       <div class="table-wrap">
-        <table style="min-width:1240px;">
-          <thead><tr><th>姓名</th><th>電話</th><th>地址</th><th>社群帳號</th><th>訂購日期</th><th>取貨日期</th><th>取貨方式</th><th>數量</th><th>應收</th><th style="text-align:center;">已交貨</th><th style="text-align:center;">對帳</th><th>備註</th><th></th></tr></thead>
+        <table id="orders-table" style="min-width:1240px;">
+          <thead><tr>
+            <th>姓名</th>
+            <th>電話</th>
+            <th>地址</th>
+            <th class="col-line">社群帳號</th>
+            <th class="col-orderdate">訂購日期</th>
+            <th class="col-pickupdate">取貨日期</th>
+            <th class="col-method">取貨方式</th>
+            <th class="col-qty">數量</th>
+            <th class="col-due">應收</th>
+            <th style="text-align:center;">已交貨</th>
+            <th style="text-align:center;">對帳</th>
+            <th class="col-note">備註</th>
+            <th class="col-actions"></th>
+          </tr></thead>
           <tbody id="customer-table-body"></tbody>
         </table>
       </div>
@@ -581,7 +620,44 @@ async function loadAll(){
   document.getElementById('recipe-waste-rate').value = state.settings.wasteRate ?? 5;
   document.getElementById('recipe-pieces-per-box').value = state.settings.piecesPerBox ?? 6;
   renderAll();
+  loadColumnVisibility();
 }
+
+/* ---------------- COLUMN VISIBILITY ---------------- */
+const HIDEABLE_COLS = ['line','orderdate','pickupdate','method','qty','due','note','actions'];
+let colVisibility = {};
+
+function colVisKey(){
+  const uidStr = (auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid : 'default';
+  return 'hgc-col-vis-' + uidStr;
+}
+
+function applyColumnVisibility(){
+  const table = document.getElementById('orders-table');
+  if(!table) return;
+  HIDEABLE_COLS.forEach(col=>{
+    const visible = colVisibility[col] !== false;
+    table.classList.toggle('hide-'+col, !visible);
+  });
+}
+
+async function loadColumnVisibility(){
+  const stored = await safeGet(colVisKey());
+  colVisibility = stored || {};
+  HIDEABLE_COLS.forEach(col=>{
+    const cb = document.querySelector(`.col-toggle[data-col="${col}"]`);
+    if(cb) cb.checked = colVisibility[col] !== false;
+  });
+  applyColumnVisibility();
+}
+
+document.querySelectorAll('.col-toggle').forEach(cb=>{
+  cb.addEventListener('change', async ()=>{
+    colVisibility[cb.dataset.col] = cb.checked;
+    applyColumnVisibility();
+    await safeSet(colVisKey(), colVisibility);
+  });
+});
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -965,10 +1041,10 @@ function renderCustomers(){
     tr.innerHTML = `<td style="white-space:nowrap;">${escapeHtml(c.name)} ${c.identity==='親友'?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(201,162,39,0.18);color:var(--gold-light);">親友價</span>':''}${c.identity==='公關'?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(160,120,200,0.2);color:#c7a3e0;">公關贈送</span>':''}</td>
       <td class="mono" style="white-space:nowrap;">${escapeHtml(c.phone||'-')}</td>
       <td>${escapeHtml(c.address||'-')}</td>
-      <td style="white-space:nowrap;">${escapeHtml(c.line||'-')}</td>
-      <td class="mono">${c.orderDate||'-'}</td>
-      <td><input type="date" class="date-edit" data-field="pickupDate" value="${c.pickupDate||''}"></td>
-      <td>
+      <td class="col-line" style="white-space:nowrap;">${escapeHtml(c.line||'-')}</td>
+      <td class="mono col-orderdate">${c.orderDate||'-'}</td>
+      <td class="col-pickupdate"><input type="date" class="date-edit" data-field="pickupDate" value="${c.pickupDate||''}"></td>
+      <td class="col-method">
         <select class="method-edit">
           <option value="寒溪" ${c.method==='寒溪'?'selected':''}>寒溪</option>
           <option value="漢口" ${c.method==='漢口'?'selected':''}>漢口</option>
@@ -976,12 +1052,12 @@ function renderCustomers(){
           <option value="超商" ${c.method==='超商'?'selected':''}>超商</option>
         </select>
       </td>
-      <td class="mono">${qtyLabel}</td>
-      <td class="mono">${dueLabel}</td>
+      <td class="mono col-qty">${qtyLabel}</td>
+      <td class="mono col-due">${dueLabel}</td>
       <td class="recon-cell"><input type="checkbox" class="delivered-cb" ${c.delivered?'checked':''}></td>
       <td class="recon-cell"><input type="checkbox" class="recon-cb" ${c.reconciled?'checked':''}></td>
-      <td><input type="text" class="note-edit" value="${escapeHtml(c.note||'')}" placeholder="點此輸入備註"></td>
-      <td style="white-space:nowrap;">
+      <td class="col-note"><input type="text" class="note-edit" value="${escapeHtml(c.note||'')}" placeholder="點此輸入備註"></td>
+      <td class="col-actions" style="white-space:nowrap;">
         <button class="btn small secondary" type="button" title="複製這筆訂單到上面表單">複製</button>
         <button class="del-btn" title="刪除">✕</button>
       </td>`;
