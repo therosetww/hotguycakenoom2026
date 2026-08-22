@@ -203,8 +203,8 @@
       <div class="eyebrow">Hot Guy Cake · 內部系統</div>
       <h2>🔒 登入</h2>
       <div class="field" style="margin-top:14px;">
-        <label>Email</label>
-        <input type="email" id="lock-email-input" placeholder="you@example.com">
+        <label>帳號</label>
+        <input type="text" id="lock-email-input" placeholder="輸入帳號（自動補上 @gmail.com）" autocapitalize="off" autocomplete="off">
       </div>
       <div class="field" style="margin-top:10px;">
         <label>密碼</label>
@@ -1447,14 +1447,15 @@ auth.onAuthStateChanged(user=>{
 async function handleLogin(){
   const errorEl = document.getElementById('lock-error');
   errorEl.textContent = '';
-  const email = document.getElementById('lock-email-input').value.trim();
+  const usernameRaw = document.getElementById('lock-email-input').value.trim();
   const pw = document.getElementById('lock-password-input').value;
-  if(!email || !pw){ errorEl.textContent = '請輸入 Email 與密碼'; return; }
+  if(!usernameRaw || !pw){ errorEl.textContent = '請輸入帳號與密碼'; return; }
+  const email = usernameRaw.includes('@') ? usernameRaw : usernameRaw + '@gmail.com';
   try{
     await auth.signInWithEmailAndPassword(email, pw);
     // onAuthStateChanged handles unlockApp()
   }catch(e){
-    errorEl.textContent = '登入失敗：Email 或密碼錯誤';
+    errorEl.textContent = '登入失敗：帳號或密碼錯誤';
   }
 }
 
