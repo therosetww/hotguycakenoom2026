@@ -38,7 +38,12 @@
   .wrap{width:92%; max-width:1600px; margin:0 auto; padding:24px 18px 10px;}
 
   /* ---- Header / signature mark ---- */
-  header{display:flex; align-items:center; gap:16px; margin-bottom:6px;}
+  header{display:flex; align-items:center; gap:16px; margin-bottom:6px; flex-wrap:wrap;}
+  header > div:nth-child(2){min-width:160px;}
+  @media (max-width:520px){
+    header{gap:10px;}
+    header .btn.small{font-size:10.5px; padding:5px 9px;}
+  }
   .lock-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
   .lock-card{
     display:flex; max-width:760px; width:100%; border-radius:20px; overflow:hidden;
@@ -101,13 +106,13 @@
 
   /* ---- Dashboard stat grid ---- */
   .stat-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-bottom:16px;}
-  .stat{background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius); padding:16px 18px; position:relative; overflow:hidden;}
+  .stat{background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius); padding:16px 18px; position:relative; overflow:hidden; min-width:0;}
   .stat .label{font-size:12px; color:var(--muted); letter-spacing:0.03em; margin-bottom:6px;}
-  .stat .num{font-family:'JetBrains Mono', monospace; font-size:24px; font-weight:700; color:var(--cream);}
+  .stat .num{font-family:'JetBrains Mono', monospace; font-size:clamp(17px, 5.2vw, 24px); font-weight:700; color:var(--cream); overflow-wrap:anywhere; line-height:1.15;}
   .stat.revenue{border-color:#5c6b3a;} .stat.revenue .num{color:var(--ok);}
   .stat.cost .num{color:var(--yolk-light,var(--yolk));}
   .stat.expense .num{color:var(--gold-light);}
-  .stat.profit{border-color:var(--gold);} .stat.profit .num{color:var(--gold-light); font-size:26px;}
+  .stat.profit{border-color:var(--gold);} .stat.profit .num{color:var(--gold-light); font-size:clamp(18px, 5.6vw, 26px);}
   .stat.profit.neg .num{color:var(--danger);}
 
   .cat-breakdown{display:flex; flex-direction:column; gap:10px;}
@@ -194,10 +199,16 @@
   .note-edit:focus{outline:none; border-color:var(--gold); background:var(--bg-deep-2);}
   .note-edit::placeholder{color:var(--muted); opacity:0.6;}
 
-  .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin-bottom:14px; padding:10px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
-  .col-toggle-label{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.02em;}
-  .col-toggle-row label{display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--cream); cursor:pointer; white-space:nowrap;}
-  .col-toggle-row input[type="checkbox"]{width:14px; height:14px; accent-color:var(--gold); cursor:pointer;}
+  .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:14px; padding:12px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
+  .col-toggle-label{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.02em; width:100%;}
+  .col-toggle-row label{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--cream); cursor:pointer; white-space:nowrap; padding:3px 0;}
+  .col-toggle-row input[type="checkbox"]{width:15px; height:15px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;}
+  @media (max-width:520px){
+    .col-toggle-row{display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; padding:14px;}
+    .col-toggle-label{grid-column:1 / -1;}
+    .col-toggle-row label{font-size:13px;}
+    .col-toggle-row input[type="checkbox"]{width:17px; height:17px;}
+  }
 
   #orders-table.hide-phone .col-phone,
   #orders-table.hide-address .col-address,
