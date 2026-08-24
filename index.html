@@ -208,6 +208,11 @@
   .pickup-display, .method-display{cursor:pointer; padding:4px 6px; border-radius:6px; display:inline-block;}
   .pickup-display:hover, .method-display:hover{background:var(--bg-deep-2);}
 
+  .collapsible-h2{cursor:pointer; display:flex; align-items:center; justify-content:space-between; user-select:none;}
+  .collapsible-h2:hover{opacity:0.85;}
+  .collapse-arrow{font-size:12px; color:var(--muted); transition:transform 0.2s ease; margin-left:8px;}
+  .collapse-arrow.open{transform:rotate(90deg);}
+
   .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:14px; padding:12px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
   .col-toggle-label{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.02em; width:100%;}
   .col-toggle-row label{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--cream); cursor:pointer; white-space:nowrap; padding:3px 0;}
@@ -405,75 +410,6 @@
   <!-- CUSTOMERS -->
   <section id="view-customers" class="view">
     <div class="card">
-      <h2><span class="dot"></span>檔期目標進度</h2>
-      <div class="settings-row">
-        <div class="field"><label>總目標盒數</label><input id="target-boxes-input" type="number" min="0" step="1" placeholder="300"></div>
-        <button class="btn secondary" id="btn-save-target">儲存目標</button>
-      </div>
-      <div class="stat-grid" style="margin-top:14px; margin-bottom:0;">
-        <div class="stat"><div class="label">總目標盒數</div><div class="num mono" id="target-boxes-display">0</div></div>
-        <div class="stat revenue"><div class="label">現訂購盒數</div><div class="num" id="current-ordered-boxes">0</div></div>
-        <div class="stat profit"><div class="label">差距總目標盒數</div><div class="num" id="target-gap">0</div></div>
-      </div>
-      <div class="note" id="target-remainder-note"></div>
-    </div>
-    <div class="card">
-      <h2><span class="dot"></span>交貨與收款總覽</h2>
-      <div class="stat-grid" style="margin-bottom:0;">
-        <div class="stat"><div class="label">已交貨金額</div><div class="num mono" id="order-summary-delivered">NT$0</div></div>
-        <div class="stat revenue"><div class="label">目前收到的金額</div><div class="num" id="order-summary-received">NT$0</div></div>
-        <div class="stat profit"><div class="label">待收餘額</div><div class="num" id="order-summary-outstanding">NT$0</div></div>
-      </div>
-      <div class="note">已交貨金額＝勾選「已交貨」的訂單應收總和；已收金額＝有連結到訂單、且狀態為「已收」的收款總和；待收餘額＝已交貨金額－已收金額。收款清單裡沒有指定顧客的付款不會算進這裡。</div>
-    </div>
-    <div class="card">
-      <h2><span class="dot"></span>售價與運費規則設定</h2>
-      <div class="settings-row">
-        <div class="field"><label>單顆售價 (NT$)</label><input id="price-single" type="number" min="0" step="1"></div>
-        <div class="field"><label>整盒售價・一般 (NT$)</label><input id="price-box-normal" type="number" min="0" step="1" placeholder="599"></div>
-        <div class="field"><label>整盒售價・親友價 (NT$)</label><input id="price-box-friend" type="number" min="0" step="1" placeholder="499"></div>
-      </div>
-      <div class="settings-row" style="margin-top:10px;">
-        <div class="field"><label>運費・向顧客收取 (NT$)</label><input id="price-shipping" type="number" min="0" step="1" placeholder="200"></div>
-        <div class="field"><label>超商實際運費成本 (NT$)</label><input id="price-store-ship-cost" type="number" min="0" step="1" placeholder="60"></div>
-        <div class="field"><label>滿幾盒免運</label><input id="price-free-ship-threshold" type="number" min="0" step="1" placeholder="3"></div>
-        <div class="field"><label>每買幾盒送1盒</label><input id="price-bonus-threshold" type="number" min="0" step="1" placeholder="10"></div>
-        <div class="field"><label>每盒原料成本 (NT$)</label><input id="price-cost-per-box" type="number" min="0" step="1" placeholder="用於自動計算贈品成本"></div>
-      </div>
-      <button class="btn secondary" id="btn-save-price" style="margin-top:12px;">儲存售價設定</button>
-      <div class="note">免運門檻只計算「整盒數量」，單顆不列入。買十送一以「每N盒送1盒」計算（例：買20盒送2盒）；贈送的盒數與「公關贈送」訂單都不計入應收金額，但會自動用這裡的每盒原料成本，加進成本控制表。宅配跟超商都跟顧客收同樣的運費，但超商的實際成本較低，系統會自動算出中間的價差。</div>
-    </div>
-    <div class="card">
-      <h2><span class="dot"></span>從 Google 表單匯入顧客名單</h2>
-      <div class="note" style="margin-top:0;">Google 表單的回覆會自動收進一個 Google 試算表。請到該試算表：<strong>檔案 → 下載 → CSV</strong> 再上傳，或直接在試算表裡框選內容，複製後貼到下方欄位。</div>
-      <div class="import-tabs">
-        <button type="button" class="active" data-pane="file">上傳 CSV 檔</button>
-        <button type="button" data-pane="paste">貼上試算表內容</button>
-      </div>
-      <div class="import-pane active" id="pane-file">
-        <input type="file" id="import-file" accept=".csv,text/csv">
-      </div>
-      <div class="import-pane" id="pane-paste">
-        <textarea id="import-paste" placeholder="從 Google 試算表複製欄位後，貼在這裡（含標題列）"></textarea>
-      </div>
-      <div class="import-actions">
-        <button class="btn secondary" id="btn-parse-import">解析資料</button>
-        <span class="note" id="import-status" style="margin:0;"></span>
-      </div>
-
-      <div id="import-mapping-section" style="display:none;">
-        <div class="note" style="margin-top:16px;">確認每個欄位對應到表單中的哪一欄（找不到對應欄位可選「不匯入」）：</div>
-        <div class="mapping-grid" id="mapping-grid"></div>
-        <div class="note">預覽（前 5 筆）：</div>
-        <div class="import-preview-wrap"><table><thead id="preview-head"></thead><tbody id="preview-body"></tbody></table></div>
-        <div class="import-actions">
-          <button class="btn" id="btn-confirm-import">確認匯入</button>
-          <button class="btn secondary" id="btn-cancel-import">取消</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
       <h2><span class="dot"></span>新增顧客訂單</h2>
       <form class="entry wide" id="form-customer">
         <div class="field"><label>姓名</label><input id="cus-name" placeholder="王小美"></div>
@@ -550,6 +486,84 @@
         </table>
       </div>
       <div class="empty-msg" id="customer-empty" style="display:none;">還沒有顧客訂單，從上面新增第一筆吧。</div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>檔期目標進度</h2>
+      <div class="settings-row">
+        <div class="field"><label>總目標盒數</label><input id="target-boxes-input" type="number" min="0" step="1" placeholder="300"></div>
+        <button class="btn secondary" id="btn-save-target">儲存目標</button>
+      </div>
+      <div class="stat-grid" style="margin-top:14px; margin-bottom:0;">
+        <div class="stat"><div class="label">總目標盒數</div><div class="num mono" id="target-boxes-display">0</div></div>
+        <div class="stat revenue"><div class="label">現訂購盒數</div><div class="num" id="current-ordered-boxes">0</div></div>
+        <div class="stat profit"><div class="label">差距總目標盒數</div><div class="num" id="target-gap">0</div></div>
+      </div>
+      <div class="note" id="target-remainder-note"></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>交貨與收款總覽</h2>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat"><div class="label">已交貨金額</div><div class="num mono" id="order-summary-delivered">NT$0</div></div>
+        <div class="stat revenue"><div class="label">目前收到的金額</div><div class="num" id="order-summary-received">NT$0</div></div>
+        <div class="stat profit"><div class="label">待收餘額</div><div class="num" id="order-summary-outstanding">NT$0</div></div>
+      </div>
+      <div class="note">已交貨金額＝勾選「已交貨」的訂單應收總和；已收金額＝有連結到訂單、且狀態為「已收」的收款總和；待收餘額＝已交貨金額－已收金額。收款清單裡沒有指定顧客的付款不會算進這裡。</div>
+    </div>
+    <div class="card collapsible-card" id="card-pricing">
+      <h2 class="collapsible-h2" onclick="toggleCollapsible('pricing')">
+        <span class="dot"></span>售價與運費規則設定
+        <span class="collapse-arrow" id="arrow-pricing">▶</span>
+      </h2>
+      <div class="collapsible-body" id="body-pricing" style="display:none;">
+      <div class="settings-row">
+        <div class="field"><label>單顆售價 (NT$)</label><input id="price-single" type="number" min="0" step="1"></div>
+        <div class="field"><label>整盒售價・一般 (NT$)</label><input id="price-box-normal" type="number" min="0" step="1" placeholder="599"></div>
+        <div class="field"><label>整盒售價・親友價 (NT$)</label><input id="price-box-friend" type="number" min="0" step="1" placeholder="499"></div>
+      </div>
+      <div class="settings-row" style="margin-top:10px;">
+        <div class="field"><label>運費・向顧客收取 (NT$)</label><input id="price-shipping" type="number" min="0" step="1" placeholder="200"></div>
+        <div class="field"><label>超商實際運費成本 (NT$)</label><input id="price-store-ship-cost" type="number" min="0" step="1" placeholder="60"></div>
+        <div class="field"><label>滿幾盒免運</label><input id="price-free-ship-threshold" type="number" min="0" step="1" placeholder="3"></div>
+        <div class="field"><label>每買幾盒送1盒</label><input id="price-bonus-threshold" type="number" min="0" step="1" placeholder="10"></div>
+        <div class="field"><label>每盒原料成本 (NT$)</label><input id="price-cost-per-box" type="number" min="0" step="1" placeholder="用於自動計算贈品成本"></div>
+      </div>
+      <button class="btn secondary" id="btn-save-price" style="margin-top:12px;">儲存售價設定</button>
+      <div class="note">免運門檻只計算「整盒數量」，單顆不列入。買十送一以「每N盒送1盒」計算（例：買20盒送2盒）；贈送的盒數與「公關贈送」訂單都不計入應收金額，但會自動用這裡的每盒原料成本，加進成本控制表。宅配跟超商都跟顧客收同樣的運費，但超商的實際成本較低，系統會自動算出中間的價差。</div>
+      </div>
+    </div>
+    <div class="card collapsible-card" id="card-google-import">
+      <h2 class="collapsible-h2" onclick="toggleCollapsible('google-import')">
+        <span class="dot"></span>從 Google 表單匯入顧客名單
+        <span class="collapse-arrow" id="arrow-google-import">▶</span>
+      </h2>
+      <div class="collapsible-body" id="body-google-import" style="display:none;">
+      <div class="note" style="margin-top:0;">Google 表單的回覆會自動收進一個 Google 試算表。請到該試算表：<strong>檔案 → 下載 → CSV</strong> 再上傳，或直接在試算表裡框選內容，複製後貼到下方欄位。</div>
+      <div class="import-tabs">
+        <button type="button" class="active" data-pane="file">上傳 CSV 檔</button>
+        <button type="button" data-pane="paste">貼上試算表內容</button>
+      </div>
+      <div class="import-pane active" id="pane-file">
+        <input type="file" id="import-file" accept=".csv,text/csv">
+      </div>
+      <div class="import-pane" id="pane-paste">
+        <textarea id="import-paste" placeholder="從 Google 試算表複製欄位後，貼在這裡（含標題列）"></textarea>
+      </div>
+      <div class="import-actions">
+        <button class="btn secondary" id="btn-parse-import">解析資料</button>
+        <span class="note" id="import-status" style="margin:0;"></span>
+      </div>
+
+      <div id="import-mapping-section" style="display:none;">
+        <div class="note" style="margin-top:16px;">確認每個欄位對應到表單中的哪一欄（找不到對應欄位可選「不匯入」）：</div>
+        <div class="mapping-grid" id="mapping-grid"></div>
+        <div class="note">預覽（前 5 筆）：</div>
+        <div class="import-preview-wrap"><table><thead id="preview-head"></thead><tbody id="preview-body"></tbody></table></div>
+        <div class="import-actions">
+          <button class="btn" id="btn-confirm-import">確認匯入</button>
+          <button class="btn secondary" id="btn-cancel-import">取消</button>
+        </div>
+      </div>
+      </div>
     </div>
   </section>
 
@@ -635,6 +649,15 @@ async function safeSet(key, val){
     await db.collection('hgc_data').doc(key).set({value: clean});
     return true;
   }catch(e){ console.error('firestore set failed', key, e); return false; }
+}
+
+function toggleCollapsible(id){
+  const body = document.getElementById('body-' + id);
+  const arrow = document.getElementById('arrow-' + id);
+  if(!body || !arrow) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
 }
 
 async function loadAll(){
