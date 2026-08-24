@@ -1071,7 +1071,10 @@ function renderCustomers(){
   list.forEach(c=>{
     const tr = document.createElement('tr');
     tr.className = c.reconciled ? 'reconciled' : '';
-    const qtyLabel = `單${c.qtySingle||0} / 盒${c.qtyBox||0}` + (c.bonusBoxes>0 ? ` <span style="color:var(--ok);">+${c.bonusBoxes}贈</span>` : '');
+    const qtyParts = [];
+    if(c.qtySingle>0) qtyParts.push(`單${c.qtySingle}`);
+    if(c.qtyBox>0) qtyParts.push(`盒${c.qtyBox}`);
+    const qtyLabel = (qtyParts.length ? qtyParts.join(' / ') : '-') + (c.bonusBoxes>0 ? ` <span style="color:var(--ok);">+${c.bonusBoxes}贈</span>` : '');
     const shipNote = c.shipping
       ? `<br><span style="color:var(--muted);font-size:11px;">(含運${fmt(c.shipping)})</span>` + (c.method==='超商' && c.shippingMargin>0 ? `<br><span style="color:var(--ok);font-size:11px;">超商省${fmt(c.shippingMargin)}</span>` : '')
       : `<br><span style="color:var(--ok);font-size:11px;">免運</span>`;
