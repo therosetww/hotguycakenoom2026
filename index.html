@@ -205,8 +205,8 @@
   .note-edit:hover{border-color:var(--panel-line);}
   .note-edit:focus{outline:none; border-color:var(--gold); background:var(--bg-deep-2);}
   .note-edit::placeholder{color:var(--muted); opacity:0.6;}
-  .pickup-display{cursor:pointer; padding:4px 6px; border-radius:6px; display:inline-block;}
-  .pickup-display:hover{background:var(--bg-deep-2);}
+  .pickup-display, .method-display{cursor:pointer; padding:4px 6px; border-radius:6px; display:inline-block;}
+  .pickup-display:hover, .method-display:hover{background:var(--bg-deep-2);}
 
   .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:14px; padding:12px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
   .col-toggle-label{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.02em; width:100%;}
@@ -1081,7 +1081,7 @@ function renderCustomers(){
       ? `<br><span style="color:var(--muted);font-size:11px;">(含運${fmt(c.shipping)})</span>` + (c.method==='超商' && c.shippingMargin>0 ? `<br><span style="color:var(--ok);font-size:11px;">超商省${fmt(c.shippingMargin)}</span>` : '')
       : `<br><span style="color:var(--ok);font-size:11px;">免運</span>`;
     const dueLabel = fmt(c.due) + shipNote;
-    tr.innerHTML = `<td style="white-space:nowrap;">${escapeHtml(c.name)} ${c.identity==='親友'?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(201,162,39,0.18);color:var(--gold-light);">親友價</span>':''}${c.identity==='公關'?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(160,120,200,0.2);color:#c7a3e0;">公關贈送</span>':''}</td>
+    tr.innerHTML = `<td style="white-space:nowrap;">${escapeHtml(c.name)}${c.identity==='親友'?'<br><span style="display:inline-block;margin-top:3px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(201,162,39,0.18);color:var(--gold-light);">親友價</span>':''}${c.identity==='公關'?'<br><span style="display:inline-block;margin-top:3px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(160,120,200,0.2);color:#c7a3e0;">公關贈送</span>':''}</td>
       <td class="mono col-phone" style="white-space:nowrap;">${escapeHtml(c.phone||'-')}</td>
       <td class="col-address">${escapeHtml(c.address||'-')}</td>
       <td class="col-line" style="white-space:nowrap;">${escapeHtml(c.line||'-')}</td>
@@ -1090,8 +1090,9 @@ function renderCustomers(){
         <span class="pickup-display">${c.pickupDate||'-'}</span>
         <input type="date" class="date-edit pickup-input" data-field="pickupDate" value="${c.pickupDate||''}" style="display:none;">
       </td>
-      <td class="col-method">
-        <select class="method-edit">
+      <td class="col-method" style="white-space:nowrap;">
+        <span class="method-display">${escapeHtml(c.method||'-')}</span>
+        <select class="method-edit" style="display:none;">
           <option value="寒溪" ${c.method==='寒溪'?'selected':''}>寒溪</option>
           <option value="漢口" ${c.method==='漢口'?'selected':''}>漢口</option>
           <option value="宅配" ${c.method==='宅配'?'selected':''}>宅配</option>
@@ -1129,7 +1130,18 @@ function renderCustomers(){
       revertPickupDisplay();
     });
     pickupInput.addEventListener('blur', revertPickupDisplay);
-    tr.querySelector('.method-edit').addEventListener('change', async (e)=>{
+    const methodDisplay = tr.querySelector('.method-display');
+    const methodSelect = tr.querySelector('.method-edit');
+    methodDisplay.addEventListener('click', ()=>{
+      methodDisplay.style.display = 'none';
+      methodSelect.style.display = 'inline-block';
+      methodSelect.focus();
+    });
+    methodSelect.addEventListener('blur', ()=>{
+      methodDisplay.style.display = 'inline';
+      methodSelect.style.display = 'none';
+    });
+    methodSelect.addEventListener('change', async (e)=>{
       c.method = e.target.value;
       const r = calcOrder(c.qtySingle, c.qtyBox, c.identity, c.method);
       c.shipping = r.shipping;
