@@ -205,6 +205,8 @@
   .note-edit:hover{border-color:var(--panel-line);}
   .note-edit:focus{outline:none; border-color:var(--gold); background:var(--bg-deep-2);}
   .note-edit::placeholder{color:var(--muted); opacity:0.6;}
+  .pickup-display{cursor:pointer; padding:4px 6px; border-radius:6px; display:inline-block;}
+  .pickup-display:hover{background:var(--bg-deep-2);}
 
   .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:14px; padding:12px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
   .col-toggle-label{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.02em; width:100%;}
@@ -1084,7 +1086,10 @@ function renderCustomers(){
       <td class="col-address">${escapeHtml(c.address||'-')}</td>
       <td class="col-line" style="white-space:nowrap;">${escapeHtml(c.line||'-')}</td>
       <td class="mono col-orderdate">${c.orderDate||'-'}</td>
-      <td class="col-pickupdate"><input type="date" class="date-edit" data-field="pickupDate" value="${c.pickupDate||''}"></td>
+      <td class="col-pickupdate mono">
+        <span class="pickup-display">${c.pickupDate||'-'}</span>
+        <input type="date" class="date-edit pickup-input" data-field="pickupDate" value="${c.pickupDate||''}" style="display:none;">
+      </td>
       <td class="col-method">
         <select class="method-edit">
           <option value="寒溪" ${c.method==='寒溪'?'selected':''}>寒溪</option>
@@ -1105,12 +1110,25 @@ function renderCustomers(){
     tr.querySelector('.btn.small').addEventListener('click', ()=>copyCustomerToForm(c.id));
     tr.querySelector('.del-btn').addEventListener('click', ()=>deleteCustomer(c.id));
     tr.querySelector('.delivered-cb').addEventListener('change', (e)=>toggleDelivered(c.id, e.target.checked));
-    tr.querySelectorAll('.date-edit').forEach(inp=>{
-      inp.addEventListener('change', async (e)=>{
-        c[e.target.dataset.field] = e.target.value;
-        await safeSet('hgc-customers', state.customers);
-      });
+    const pickupDisplay = tr.querySelector('.pickup-display');
+    const pickupInput = tr.querySelector('.pickup-input');
+    pickupDisplay.addEventListener('click', ()=>{
+      pickupDisplay.style.display = 'none';
+      pickupInput.style.display = 'inline-block';
+      pickupInput.focus();
+      if(pickupInput.showPicker) { try{ pickupInput.showPicker(); }catch(e){} }
     });
+    function revertPickupDisplay(){
+      pickupDisplay.textContent = c.pickupDate || '-';
+      pickupDisplay.style.display = 'inline';
+      pickupInput.style.display = 'none';
+    }
+    pickupInput.addEventListener('change', async (e)=>{
+      c.pickupDate = e.target.value;
+      await safeSet('hgc-customers', state.customers);
+      revertPickupDisplay();
+    });
+    pickupInput.addEventListener('blur', revertPickupDisplay);
     tr.querySelector('.method-edit').addEventListener('change', async (e)=>{
       c.method = e.target.value;
       const r = calcOrder(c.qtySingle, c.qtyBox, c.identity, c.method);
