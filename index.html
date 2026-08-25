@@ -409,8 +409,12 @@
 
   <!-- CUSTOMERS -->
   <section id="view-customers" class="view">
-    <div class="card">
-      <h2><span class="dot"></span>新增顧客訂單</h2>
+    <div class="card collapsible-card" id="card-addcustomer">
+      <h2 class="collapsible-h2" onclick="toggleCollapsible('addcustomer')">
+        <span class="dot"></span>新增顧客訂單
+        <span class="collapse-arrow" id="arrow-addcustomer">▶</span>
+      </h2>
+      <div class="collapsible-body" id="body-addcustomer" style="display:none;">
       <form class="entry wide" id="form-customer">
         <div class="field"><label>姓名</label><input id="cus-name" placeholder="王小美"></div>
         <div class="field"><label>電話</label><input id="cus-phone" placeholder="09XX-XXX-XXX"></div>
@@ -432,6 +436,7 @@
         <div class="note" style="margin-top:0; font-size:12.5px;" id="cus-preview-text">請輸入數量以試算應收金額</div>
       </div>
       <button class="btn" id="btn-add-customer">新增訂單</button>
+      </div>
     </div>
     <div class="card">
       <h2><span class="dot"></span>顧客訂單列表</h2>
@@ -593,7 +598,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>姓名／聯絡</th><th>訂購日期</th><th>應收金額</th><th>對帳狀態</th><th></th></tr></thead>
+          <thead><tr><th>姓名／聯絡</th><th>訂購日期</th><th>應收金額</th><th>對帳狀態</th><th>付款方式</th><th></th></tr></thead>
           <tbody id="recon-table-body"></tbody>
         </table>
       </div>
@@ -1506,18 +1511,37 @@ function renderReconciliation(){
       <td class="mono">${c.orderDate||'-'}</td>
       <td class="mono">${fmt(c.due)}</td>
       <td><span class="tag ${c.reconciled?'已收':'未收'}">${c.reconciled?'已對帳':'未對帳'}</span></td>
+      <td>
+        <select class="recon-method-select">
+          <option value="現金">現金</option>
+          <option value="銀行轉帳">銀行轉帳</option>
+          <option value="貨到付款">貨到付款</option>
+          <option value="其他">其他</option>
+        </select>
+      </td>
       <td><button class="btn small secondary" type="button">登記收款</button></td>`;
-    tr.querySelector('button').addEventListener('click', ()=>quickFillPayment(c.id));
+    tr.querySelector('button').addEventListener('click', ()=>{
+      const method = tr.querySelector('.recon-method-select').value;
+      completePayment(c.id, method);
+    });
     body.appendChild(tr);
   });
 }
 
-function quickFillPayment(id){
-  const sel = document.getElementById('pay-customer');
-  sel.value = id;
-  sel.dispatchEvent(new Event('change'));
-  document.querySelector('#view-payments .card').scrollIntoView({behavior:'smooth', block:'start'});
-  document.getElementById('pay-amount').focus();
+async function completePayment(customerId, method){
+  const c = state.customers.find(x=>x.id===customerId);
+  if(!c) return;
+  state.payments.unshift({
+    id: uid(),
+    name: c.name,
+    orderId: c.id,
+    amount: c.due,
+    method,
+    status: '已收',
+    date: todayStr()
+  });
+  await safeSet('hgc-payments', state.payments);
+  renderAll();
 }
 
 /* ---------------- DASHBOARD ---------------- */
