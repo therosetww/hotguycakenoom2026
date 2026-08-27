@@ -494,6 +494,17 @@
       <div class="empty-msg" id="customer-empty" style="display:none;">還沒有顧客訂單，從上面新增第一筆吧。</div>
     </div>
     <div class="card">
+      <h2><span class="dot"></span>各取貨日期盒數統計</h2>
+      <div class="note" style="margin-top:0;">只計算整盒數量（不含單顆換算），已包含買十送一與公關贈送的贈品盒。依取貨日期分組，同一天再拆成各取貨方式的盒數。</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>取貨日期</th><th>寒溪</th><th>漢口</th><th>宅配</th><th>超商</th><th>當日合計</th></tr></thead>
+          <tbody id="pickup-summary-body"></tbody>
+        </table>
+      </div>
+      <div class="empty-msg" id="pickup-summary-empty" style="display:none;">還沒有任何盒裝訂單。</div>
+    </div>
+    <div class="card">
       <h2><span class="dot"></span>檔期目標進度</h2>
       <div class="settings-row">
         <div class="field"><label>總目標盒數</label><input id="target-boxes-input" type="number" min="0" step="1" placeholder="300"></div>
@@ -1646,6 +1657,40 @@ document.getElementById('btn-save-target').addEventListener('click', async ()=>{
   renderTargetProgress();
 });
 
+function renderPickupDateSummary(){
+  const methods = ['寒溪','漢口','宅配','超商'];
+  const groups = {};
+  state.customers.forEach(c=>{
+    const qty = (c.qtyBox||0) + (c.bonusBoxes||0);
+    if(qty<=0) return;
+    const date = c.pickupDate || '未設定';
+    if(!groups[date]) groups[date] = {寒溪:0, 漢口:0, 宅配:0, 超商:0, 其他:0};
+    const method = methods.includes(c.method) ? c.method : '其他';
+    groups[date][method] += qty;
+  });
+  const dates = Object.keys(groups).sort((a,b)=>{
+    if(a==='未設定') return 1;
+    if(b==='未設定') return -1;
+    return a<b ? -1 : a>b ? 1 : 0;
+  });
+  const body = document.getElementById('pickup-summary-body');
+  const empty = document.getElementById('pickup-summary-empty');
+  body.innerHTML = '';
+  empty.style.display = dates.length ? 'none' : 'block';
+  dates.forEach(date=>{
+    const g = groups[date];
+    const total = methods.reduce((s,m)=>s+(g[m]||0),0) + (g['其他']||0);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono">${date}</td>
+      <td class="mono">${g['寒溪']||0}</td>
+      <td class="mono">${g['漢口']||0}</td>
+      <td class="mono">${g['宅配']||0}</td>
+      <td class="mono">${g['超商']||0}</td>
+      <td class="mono" style="font-weight:700; color:var(--gold-light);">${total}</td>`;
+    body.appendChild(tr);
+  });
+}
+
 function renderAll(){
   renderIngredients();
   renderRecipe();
@@ -1656,6 +1701,7 @@ function renderAll(){
   renderReconciliation();
   renderOrderSummary();
   renderTargetProgress();
+  renderPickupDateSummary();
   renderDashboard();
 }
 
