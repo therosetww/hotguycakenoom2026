@@ -210,7 +210,8 @@
 
   .collapsible-h2{cursor:pointer; display:flex; align-items:center; justify-content:space-between; user-select:none;}
   .collapsible-h2:hover{opacity:0.85;}
-  .collapse-arrow{font-size:12px; color:var(--muted); transition:transform 0.2s ease; margin-left:8px;}
+  .collapse-arrow{display:inline-flex; align-items:center; justify-content:center; color:var(--muted); transition:transform 0.2s ease; margin-left:8px; flex-shrink:0;}
+  .collapse-arrow svg{width:12px; height:12px; display:block;}
   .collapse-arrow.open{transform:rotate(90deg);}
 
   .col-toggle-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:14px; padding:12px 14px; background:var(--panel-2); border-radius:10px; border:1px solid var(--panel-line);}
@@ -412,7 +413,7 @@
     <div class="card collapsible-card" id="card-addcustomer">
       <h2 class="collapsible-h2" onclick="toggleCollapsible('addcustomer')">
         <span class="dot"></span>新增顧客訂單
-        <span class="collapse-arrow" id="arrow-addcustomer">▶</span>
+        <span class="collapse-arrow" id="arrow-addcustomer"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M4 2 L9 6 L4 10 Z" fill="currentColor"/></svg></span>
       </h2>
       <div class="collapsible-body" id="body-addcustomer" style="display:none;">
       <form class="entry wide" id="form-customer">
@@ -517,7 +518,7 @@
     <div class="card collapsible-card" id="card-pricing">
       <h2 class="collapsible-h2" onclick="toggleCollapsible('pricing')">
         <span class="dot"></span>售價與運費規則設定
-        <span class="collapse-arrow" id="arrow-pricing">▶</span>
+        <span class="collapse-arrow" id="arrow-pricing"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M4 2 L9 6 L4 10 Z" fill="currentColor"/></svg></span>
       </h2>
       <div class="collapsible-body" id="body-pricing" style="display:none;">
       <div class="settings-row">
@@ -539,7 +540,7 @@
     <div class="card collapsible-card" id="card-google-import">
       <h2 class="collapsible-h2" onclick="toggleCollapsible('google-import')">
         <span class="dot"></span>從 Google 表單匯入顧客名單
-        <span class="collapse-arrow" id="arrow-google-import">▶</span>
+        <span class="collapse-arrow" id="arrow-google-import"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M4 2 L9 6 L4 10 Z" fill="currentColor"/></svg></span>
       </h2>
       <div class="collapsible-body" id="body-google-import" style="display:none;">
       <div class="note" style="margin-top:0;">Google 表單的回覆會自動收進一個 Google 試算表。請到該試算表：<strong>檔案 → 下載 → CSV</strong> 再上傳，或直接在試算表裡框選內容，複製後貼到下方欄位。</div>
@@ -574,8 +575,12 @@
 
   <!-- PAYMENTS -->
   <section id="view-payments" class="view">
-    <div class="card">
-      <h2><span class="dot"></span>新增收款紀錄</h2>
+    <div class="card collapsible-card" id="card-addpayment">
+      <h2 class="collapsible-h2" onclick="toggleCollapsible('addpayment')">
+        <span class="dot"></span>新增收款紀錄
+        <span class="collapse-arrow" id="arrow-addpayment"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M4 2 L9 6 L4 10 Z" fill="currentColor"/></svg></span>
+      </h2>
+      <div class="collapsible-body" id="body-addpayment" style="display:none;">
       <form class="entry wide" id="form-payment">
         <div class="field"><label>顧客</label><select id="pay-customer"><option value="">— 選擇顧客（選填）—</option></select></div>
         <div class="field"><label>姓名（若未選顧客可手動輸入）</label><input id="pay-name-manual" placeholder="顧客姓名"></div>
@@ -589,6 +594,7 @@
         <div class="field"><label>日期</label><input id="pay-date" type="date"></div>
       </form>
       <button class="btn" id="btn-add-payment">新增收款</button>
+      </div>
     </div>
     <div class="card">
       <h2><span class="dot"></span>顧客對帳狀態</h2>
@@ -1086,6 +1092,11 @@ function getFilteredSortedCustomers(){
     const bv = (b[orderSortField]||'');
     if(av < bv) return orderSortDir==='asc' ? -1 : 1;
     if(av > bv) return orderSortDir==='asc' ? 1 : -1;
+    // Tie-breaker: same date value, fall back to creation time (encoded in id) so order is never "stuck"
+    const aid = a.id || '';
+    const bid = b.id || '';
+    if(aid < bid) return orderSortDir==='asc' ? -1 : 1;
+    if(aid > bid) return orderSortDir==='asc' ? 1 : -1;
     return 0;
   });
   return list;
