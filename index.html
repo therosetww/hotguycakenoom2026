@@ -296,8 +296,18 @@
       </div>
     </div>
     <div class="card">
-      <h2><span class="dot"></span>未收款提醒</h2>
-      <div id="unpaid-list"></div>
+      <h2><span class="dot"></span>出貨與收款進度</h2>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat"><div class="label">已交貨盒數</div><div class="num mono" id="dash-delivered-boxes">0</div></div>
+        <div class="stat"><div class="label">未交貨盒數</div><div class="num mono" id="dash-undelivered-boxes">0</div></div>
+        <div class="stat profit"><div class="label">待出盒數（距目標）</div><div class="num" id="dash-pending-boxes">0</div></div>
+      </div>
+      <div class="stat-grid" style="margin-top:12px; margin-bottom:0;">
+        <div class="stat"><div class="label">訂單總計應收</div><div class="num mono" id="dash-total-due">NT$0</div></div>
+        <div class="stat revenue"><div class="label">目前已收</div><div class="num" id="dash-total-received">NT$0</div></div>
+        <div class="stat profit"><div class="label">待收</div><div class="num" id="dash-total-outstanding">NT$0</div></div>
+      </div>
+      <div class="note">已交貨/未交貨盒數＝依「已交貨」勾選狀態分組的整盒數量（含贈品盒）；待出盒數＝檔期目標盒數－現訂購盒數；訂單總計應收＝全部訂單應收金額加總（不限已交貨）；待收＝訂單總計應收－目前已收。</div>
     </div>
   </section>
 
@@ -624,6 +634,9 @@
 
     <div class="card">
       <h2><span class="dot"></span>收款清單</h2>
+      <div class="settings-row" style="margin-bottom:14px;">
+        <div class="field" style="flex:2; min-width:200px;"><label>搜尋</label><input id="payment-search" type="text" placeholder="搜尋姓名、付款方式..."></div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>日期</th><th>姓名</th><th>方式</th><th>狀態</th><th>金額</th><th></th></tr></thead>
@@ -1491,12 +1504,24 @@ async function deletePayment(id){
   renderAll();
 }
 
+let paymentSearchTerm = '';
+
+document.getElementById('payment-search').addEventListener('input', (e)=>{
+  paymentSearchTerm = e.target.value;
+  renderPayments();
+});
+
 function renderPayments(){
   const body = document.getElementById('payment-table-body');
   const empty = document.getElementById('payment-empty');
   body.innerHTML = '';
-  empty.style.display = state.payments.length ? 'none' : 'block';
-  state.payments.forEach(p=>{
+  const term = paymentSearchTerm.trim().toLowerCase();
+  const list = term
+    ? state.payments.filter(p => [p.name, p.method].some(v => (v||'').toLowerCase().includes(term)))
+    : state.payments;
+  empty.style.display = list.length ? 'none' : 'block';
+  empty.textContent = term ? '找不到符合搜尋條件的收款紀錄。' : '還沒有收款紀錄，從上面新增第一筆吧。';
+  list.forEach(p=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td class="mono">${p.date}</td>
       <td>${escapeHtml(p.name)}</td>
@@ -1553,6 +1578,12 @@ function renderReconciliation(){
 async function completePayment(customerId, method){
   const c = state.customers.find(x=>x.id===customerId);
   if(!c) return;
+  const existing = state.payments.filter(p=>p.orderId===customerId && p.status==='已收');
+  if(existing.length){
+    const existingTotal = existing.reduce((s,p)=>s+Number(p.amount||0),0);
+    const ok = confirm(`這筆訂單（${c.name}）已經登記過收款了，目前已有 ${existing.length} 筆、共 ${fmt(existingTotal)}。\n\n確定要再新增一筆嗎？這樣會重複計入收入。`);
+    if(!ok) return;
+  }
   state.payments.unshift({
     id: uid(),
     name: c.name,
@@ -1562,7 +1593,9 @@ async function completePayment(customerId, method){
     status: '已收',
     date: todayStr()
   });
+  c.reconciled = true;
   await safeSet('hgc-payments', state.payments);
+  await safeSet('hgc-customers', state.customers);
   renderAll();
 }
 
@@ -1598,14 +1631,37 @@ function renderDashboard(){
     catBreak.appendChild(row);
   });
 
-  const unpaidWrap = document.getElementById('unpaid-list');
-  const unpaid = state.payments.filter(p=>p.status==='未收');
-  if(!unpaid.length){
-    unpaidWrap.innerHTML = '<div class="empty-msg" style="padding:8px 0;">目前沒有未收款項 🎉</div>';
-  } else {
-    unpaidWrap.innerHTML = unpaid.map(p=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(84,69,42,0.4);font-size:13px;">
-      <span>${escapeHtml(p.name)}　<span style="color:var(--muted);">${p.date}</span></span><span class="mono">${fmt(p.amount)}</span></div>`).join('');
-  }
+  // Shipping progress: delivered vs undelivered box counts (includes bonus/gift boxes)
+  let deliveredBoxes = 0, undeliveredBoxes = 0;
+  state.customers.forEach(c=>{
+    const qty = (c.qtyBox||0) + (c.bonusBoxes||0);
+    if(c.delivered) deliveredBoxes += qty; else undeliveredBoxes += qty;
+  });
+  document.getElementById('dash-delivered-boxes').textContent = deliveredBoxes.toLocaleString('zh-Hant-TW');
+  document.getElementById('dash-undelivered-boxes').textContent = undeliveredBoxes.toLocaleString('zh-Hant-TW');
+
+  // Pending boxes: gap vs target (same calc as 檔期目標進度)
+  const piecesPerBox = state.settings.piecesPerBox || 6;
+  let totalQtyBoxAll = 0, totalQtySingleAll = 0;
+  state.customers.forEach(c=>{
+    totalQtyBoxAll += (c.qtyBox||0) + (c.bonusBoxes||0);
+    totalQtySingleAll += (c.qtySingle||0);
+  });
+  const currentOrderedBoxesAll = totalQtyBoxAll + Math.floor(totalQtySingleAll / piecesPerBox);
+  const pendingBoxes = (state.settings.targetBoxes||0) - currentOrderedBoxesAll;
+  const pendingEl = document.getElementById('dash-pending-boxes');
+  pendingEl.textContent = pendingBoxes.toLocaleString('zh-Hant-TW');
+  pendingEl.parentElement.classList.toggle('neg', pendingBoxes<0);
+
+  // Payment progress: total due across ALL orders vs total received vs outstanding
+  const totalDueAll = state.customers.reduce((s,c)=>s+Number(c.due||0),0);
+  const totalReceivedAll = state.payments.filter(p=>p.status==='已收').reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalOutstandingAll = totalDueAll - totalReceivedAll;
+  document.getElementById('dash-total-due').textContent = fmt(totalDueAll);
+  document.getElementById('dash-total-received').textContent = fmt(totalReceivedAll);
+  const outstandingEl = document.getElementById('dash-total-outstanding');
+  outstandingEl.textContent = fmt(totalOutstandingAll);
+  outstandingEl.parentElement.classList.toggle('neg', totalOutstandingAll<0);
 }
 
 function renderOrderSummary(){
